@@ -1,21 +1,89 @@
-# Educational Python & Scapy Firewall Prototype
+# 🛡️ Basic Firewall Using Python
 
-An educational network security prototype designed to demonstrate software-defined packet filtering concepts using Python 3 and the Scapy packet manipulation engine. The system operates by dynamically parsing Layer 3 (IPv4) and Layer 4 (TCP/UDP/ICMP) headers, running them against a decoupled ruleset, and writing an audit trail to disk.
+A Python-based educational firewall prototype designed to demonstrate **network packet inspection, rule-based traffic filtering, and security logging** using Python and Scapy.
 
-## Target Architecture
+> 🎓 **Project Type:** Cybersecurity Minor Project  
+> 🐍 **Language:** Python 3  
+> 📡 **Library:** Scapy  
+> 🐧 **Environment:** Kali Linux  
 
-Network Traffic -> Scapy Sniff Engine -> Header Extraction -> JSON Rule Matching Engine -> Decision (ALLOW/BLOCK) -> Persistent Log Generation
+## 📌 Overview
 
-## Project Files
-* `firewall.py`: Core application containing the sniffer loop, dynamic evaluation engine, and persistent logging mechanics.
-* `rules.json`: Decoupled firewall configuration file defining explicit blocking rules and the system default policy.
-* `inspect_packets.py`: Foundational network data inspection diagnostic script.
-* `firewall.log`: Automated, persistent runtime audit trail log.
+A firewall monitors and filters network traffic according to predefined security rules. 
 
-## Verification & Testing
-The system was validated within a controlled virtual testbed across two distinct vectors:
-1. **Explicit Rule Matching (BLOCK)**: Enforced a drop condition on ICMP echo traffic explicitly sourced from/directed to targeted lab endpoints.
-2. **Default Fallback Logic (ALLOW)**: Allowed miscellaneous web communication (HTTP port 80) and DNS traffic to pass via the default fallback configuration policy.
+This project implements a simplified firewall which can captures and analyzes the network packets, extracts information such as IP addresses, protocols, and ports, evaluates packets against configured rules, and also generates **ALLOW/BLOCK** decisions.
 
-## Operational Constraints & Disclaimer
-This software is intended as an educational prototype for network security validation. It operates as a passive network traffic engine and does not alter system kernel-level iptables or routing entries. It should not be used as a replacement for enterprise-grade firewalls.
+The project is ONLY intended for educational purposes and demonstrates the basic principles of network packet filtering.
+
+## 🎯 Objectives
+
+* 📡 Capture and inspect network packets using Scapy Library.
+* 🔎 It helps in Analyzing IP addresses, protocols, and ports.
+* 📋 Define configurable firewall rules.
+* ⚙️ Match the packets against predefined rules.
+* ✅ Generate ALLOW decisions for permitted traffic.
+* 🚫 Generate BLOCK decisions for restricted traffic.
+* 📝 Record firewall decisions through logging.
+* 🔐 Understand fundamental network security and packet-filtering concepts.
+
+## 🏗️ Architecture
+
+```text
+🌐 Network Traffic
+        ↓
+📡 Scapy Packet Capture
+        ↓
+🔎 Packet Inspection
+        ↓
+⚙️ Rule Matching
+        ↓
+✅ ALLOW / 🚫 BLOCK
+        ↓
+📝 Event Logging
+```
+
+## 📂 Project Files
+
+| File                | Purpose                                     |
+| ------------------- | ------------------------------------------- |
+| `firewall.py`       | 🛡️ Core firewall and rule-processing logic |
+| `inspect_packets.py`| 🔎 Packet inspection and analysis utility   |
+| `rules.json`        | 📋 Configurable firewall rules              |
+| `README.md`         | 📖 Project documentation                    |
+| `.gitignore`        | 🚫 Git-excluded files                       |
+
+## 🧰 Technologies
+
+* 🐍 **Python 3** — Firewall logic and processing
+* 📡 **Scapy** — Packet capture and inspection.
+* 📋 **JSON** — Firewall rule configuration
+* 🐧 **Kali Linux** — Development and testing environment
+
+## 🧪 Testing
+
+The firewall is tested in a controlled environment to verify:
+
+* 📡 Packet capture and inspection
+* 📋 Rule matching
+* ✅ Allowed traffic
+* 🚫 Blocked traffic
+* 📝 Logging of firewall decisions
+* ⚙️ Default-policy behaviour
+
+## ⚠️ Limitations
+
+This is an **educational firewall prototype**, not a replacement for production or enterprise firewall technologies. 
+
+It focuses on demonstrating the fundamental workflow:
+
+**Packet Capture → Inspection → Rule Matching → Decision → Logging**
+
+## 🔒 Disclaimer
+
+This project is developed strictly for **educational and authorized testing purposes**. Isnt its like Network traffic should only be captured, analyzed, or filtered on systems and networks for which appropriate authorization has been obtained,..
+
+---
+
+### 🚀 Project Status
+
+**Completed & Verified** ✅
