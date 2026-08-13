@@ -1,0 +1,21 @@
+{
+    "default_policy": "ALLOW",
+    "rules": [
+        {
+            "rule_id": 1,
+            "ip": "192.168.75.2",
+            "protocol": "ICMP",
+            "port": "N/A",
+            "action": "BLOCK",
+            "description": "Block all ICMP ping requests to/from testing host"
+        },
+        {
+            "rule_id": 2,
+            "ip": "any",
+            "protocol": "TCP",
+            "port": 80,
+            "action": "ALLOW",
+            "description": "Allow standard inbound/outbound HTTP web traffic"
+        }
+    ]
+}
