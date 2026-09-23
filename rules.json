@@ -1,21 +1,85 @@
 {
-    "default_policy": "ALLOW",
-    "rules": [
-        {
-            "rule_id": 1,
-            "ip": "192.168.75.2",
-            "protocol": "ICMP",
-            "port": "N/A",
-            "action": "BLOCK",
-            "description": "Block all ICMP ping requests to/from testing host"
-        },
-        {
-            "rule_id": 2,
-            "ip": "any",
-            "protocol": "TCP",
-            "port": 80,
-            "action": "ALLOW",
-            "description": "Allow standard inbound/outbound HTTP web traffic"
-        }
-    ]
+  "default_policy": "ALLOW",
+  "rules": [
+    {
+      "rule_id": 1,
+      "ip": "192.168.75.2",
+      "protocol": "ICMP",
+      "port": "N/A",
+      "action": "BLOCK",
+      "description": "Block ICMP traffic to and from the lab gateway"
+    },
+    {
+      "rule_id": 2,
+      "ip": "any",
+      "protocol": "TCP",
+      "port": 80,
+      "action": "ALLOW",
+      "description": "Permit HTTP web traffic"
+    },
+    {
+      "rule_id": 3,
+      "ip": "any",
+      "protocol": "TCP",
+      "port": 22,
+      "action": "BLOCK",
+      "description": "Block SSH traffic for controlled security testing"
+    },
+    {
+      "rule_id": 4,
+      "ip": "8.8.4.4",
+      "protocol": "UDP",
+      "port": 53,
+      "action": "BLOCK",
+      "description": "Block DNS queries to the specified external DNS server"
+    },
+    {
+      "rule_id": 5,
+      "ip": "any",
+      "protocol": "TCP",
+      "port": 443,
+      "action": "ALLOW",
+      "description": "Permit HTTPS web traffic"
+    },
+    {
+      "rule_id": 6,
+      "ip": "any",
+      "protocol": "UDP",
+      "port": 67,
+      "action": "ALLOW",
+      "description": "Permit DHCP server traffic"
+    },
+    {
+      "rule_id": 7,
+      "ip": "any",
+      "protocol": "UDP",
+      "port": 68,
+      "action": "ALLOW",
+      "description": "Permit DHCP client traffic"
+    },
+    {
+      "rule_id": 8,
+      "ip": "any",
+      "protocol": "TCP",
+      "port": 23,
+      "action": "BLOCK",
+      "description": "Block Telnet traffic"
+    },
+    {
+      "rule_id": 9,
+      "ip": "any",
+      "protocol": "TCP",
+      "port": 21,
+      "action": "BLOCK",
+      "description": "Block FTP control traffic"
+    },
+    {
+      "rule_id": 10,
+      "ip": "any",
+      "protocol": "UDP",
+      "port": 123,
+      "action": "BLOCK",
+      "description": "Block NTP traffic for controlled testing"
+    }
+  ]
 }

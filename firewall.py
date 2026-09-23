@@ -2,88 +2,248 @@ import json
 import os
 import sys
 from datetime import datetime
-from scapy.all import sniff, IP, TCP, UDP, ICMP
+
+from scapy.all import sniff, IP, TCP, UDP, ICMP, get_if_addr
+
 
 RULES_FILE = "rules.json"
 LOG_FILE = "firewall.log"
+INTERFACE = "eth0"
+
 
 def load_rules():
+    """Load firewall rules once at startup."""
     if not os.path.exists(RULES_FILE):
-        print(f"[-] Error: {RULES_FILE} not found!")
-        sys.exit(1)
-    with open(RULES_FILE, "r") as f:
-        return json.load(f)
+        raise FileNotFoundError(f"{RULES_FILE} not found.")
 
-def write_log(timestamp, src, dst, proto, port, action, rule_id):
-    log_line = f"[{timestamp}] ACTION={action} | RULE_ID={rule_id} | PROTO={proto} | SRC={src} -> DST={dst} | PORT={port}\n"
-    with open(LOG_FILE, "a") as f:
-        f.write(log_line)
+    with open(RULES_FILE, "r") as file:
+        config = json.load(file)
 
-def evaluate_packet(packet):
+    rules = config.get("rules", [])
+    default_policy = config.get("default_policy", "ALLOW").upper()
+
+    if default_policy not in ("ALLOW", "BLOCK"):
+        raise ValueError("default_policy must be ALLOW or BLOCK.")
+
+    return rules, default_policy
+
+
+def inspect_packet(packet):
+    """
+    Extract Layer 3 and Layer 4 information from an IP packet.
+    """
     if IP not in packet:
-        return
+        return None
 
     src_ip = packet[IP].src
     dst_ip = packet[IP].dst
-    proto_num = packet[IP].proto
-    
-    proto_name = "UNKNOWN"
+
+    protocol = "UNKNOWN"
     src_port = "N/A"
     dst_port = "N/A"
-    
+
     if TCP in packet:
-        proto_name = "TCP"
+        protocol = "TCP"
         src_port = packet[TCP].sport
         dst_port = packet[TCP].dport
+
     elif UDP in packet:
-        proto_name = "UDP"
+        protocol = "UDP"
         src_port = packet[UDP].sport
         dst_port = packet[UDP].dport
+
     elif ICMP in packet:
-        proto_name = "ICMP"
+        protocol = "ICMP"
 
-    config = load_rules()
-    rules = config.get("rules", [])
-    default_policy = config.get("default_policy", "ALLOW")
-    
-    matched_rule = None
-    final_action = default_policy
-    rule_id_str = "DEFAULT"
+    return {
+        "src_ip": src_ip,
+        "dst_ip": dst_ip,
+        "protocol": protocol,
+        "src_port": src_port,
+        "dst_port": dst_port,
+    }
 
+
+def determine_direction(packet_info, local_ip):
+    """
+    Determine whether the packet is entering or leaving this host.
+    """
+    if packet_info["src_ip"] == local_ip:
+        return "OUTPUT"
+
+    if packet_info["dst_ip"] == local_ip:
+        return "INPUT"
+
+    return "OTHER"
+
+
+def rule_matches(rule, packet_info, direction):
+    """
+    Check whether a rule matches the inspected packet.
+
+    IP matching follows the same directional model used by nftables:
+    INPUT  -> source IP
+    OUTPUT -> destination IP
+    """
+
+    rule_ip = str(rule.get("ip", "any"))
+    rule_protocol = str(rule.get("protocol", "any")).upper()
+    rule_port = str(rule.get("port", "any"))
+
+    src_ip = packet_info["src_ip"]
+    dst_ip = packet_info["dst_ip"]
+    protocol = packet_info["protocol"]
+    dst_port = packet_info["dst_port"]
+
+    # IP matching
+    if rule_ip != "any":
+        if direction == "INPUT":
+            if src_ip != rule_ip:
+                return False
+
+        elif direction == "OUTPUT":
+            if dst_ip != rule_ip:
+                return False
+
+        else:
+            return False
+
+    # Protocol matching
+    if rule_protocol != "ANY" and protocol != rule_protocol:
+        return False
+
+    # Port matching
+    if rule_port not in ("any", "ANY", "N/A"):
+        if protocol not in ("TCP", "UDP"):
+            return False
+
+        if str(dst_port) != rule_port:
+            return False
+
+    return True
+
+
+def evaluate_packet(packet_info, rules, default_policy, direction):
+    """
+    Evaluate a packet using first-match-wins rule processing.
+    """
     for rule in rules:
-        rule_ip = rule.get("ip")
-        rule_proto = rule.get("protocol")
-        rule_port = rule.get("port")
-        
-        ip_match = (rule_ip == "any" or src_ip == rule_ip or dst_ip == rule_ip)
-        proto_match = (rule_proto == "any" or proto_name == rule_proto)
-        
-        port_match = False
-        if rule_port == "any" or rule_port == "N/A":
-            port_match = True
-        elif proto_name in ["TCP", "UDP"]:
-            if str(src_port) == str(rule_port) or str(dst_port) == str(rule_port):
-                port_match = True
+        if rule_matches(rule, packet_info, direction):
+            return (
+                str(rule.get("action", default_policy)).upper(),
+                str(rule.get("rule_id", "UNKNOWN")),
+                str(rule.get("description", "")),
+            )
 
-        if ip_match and proto_match and port_match:
-            matched_rule = rule
-            final_action = rule.get("action")
-            rule_id_str = str(rule.get("rule_id"))
-            break
+    return default_policy, "DEFAULT", "No matching rule"
 
+
+def write_log(packet_info, direction, action, rule_id, description):
+    """
+    Write a structured firewall decision to firewall.log.
+    """
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    target_port = dst_port if proto_name in ["TCP", "UDP"] else "N/A"
-    
-    print(f"[{timestamp}] [{final_action}] Proto: {proto_name:<4} | {src_ip} -> {dst_ip} | Port: {target_port} | Rule: {rule_id_str}")
-    write_log(timestamp, src_ip, dst_ip, proto_name, target_port, final_action, rule_id_str)
 
-print("[*] Launching Educational Python Firewall Prototype...")
-print(f"[*] Monitoring interface: eth0")
-print("[*] Press Ctrl+C to terminate.")
+    log_line = (
+        f"[{timestamp}] "
+        f"DIRECTION={direction} | "
+        f"ACTION={action} | "
+        f"RULE_ID={rule_id} | "
+        f"PROTO={packet_info['protocol']} | "
+        f"SRC={packet_info['src_ip']}:{packet_info['src_port']} | "
+        f"DST={packet_info['dst_ip']}:{packet_info['dst_port']} | "
+        f"DESCRIPTION={description}\n"
+    )
 
-try:
-    sniff(iface="eth0", filter="ip", prn=evaluate_packet, store=False)
-except KeyboardInterrupt:
-    print("\n[*] Firewall stopped safely.")
-except Exception as e:
-    print(f"[-] Critical Error: {e}", file=sys.stderr)
+    with open(LOG_FILE, "a") as file:
+        file.write(log_line)
+
+
+def process_packet(packet, rules, default_policy, local_ip):
+    """
+    Inspect, evaluate and log a captured packet.
+
+    Actual packet enforcement is handled separately by nftables.
+    """
+    packet_info = inspect_packet(packet)
+
+    if packet_info is None:
+        return
+
+    direction = determine_direction(packet_info, local_ip)
+
+    if direction == "OTHER":
+        return
+
+    action, rule_id, description = evaluate_packet(
+        packet_info,
+        rules,
+        default_policy,
+        direction,
+    )
+
+    timestamp = datetime.now().strftime("%H:%M:%S")
+
+    print(
+        f"[{timestamp}] "
+        f"[{direction}] "
+        f"[{action}] "
+        f"Rule={rule_id} | "
+        f"{packet_info['protocol']} "
+        f"{packet_info['src_ip']}:{packet_info['src_port']} -> "
+        f"{packet_info['dst_ip']}:{packet_info['dst_port']}"
+    )
+
+    write_log(
+        packet_info,
+        direction,
+        action,
+        rule_id,
+        description,
+    )
+
+
+def main():
+    print("========== PYFIREWALL ==========")
+    print("[*] Starting Python packet inspection engine")
+    print(f"[*] Interface: {INTERFACE}")
+
+    try:
+        rules, default_policy = load_rules()
+        local_ip = get_if_addr(INTERFACE)
+
+        if local_ip == "0.0.0.0":
+            raise RuntimeError(
+                f"No IPv4 address detected on interface {INTERFACE}."
+            )
+
+        print(f"[*] Local IP: {local_ip}")
+        print(f"[*] Rules loaded: {len(rules)}")
+        print(f"[*] Default policy: {default_policy}")
+        print("[*] Enforcement: nftables")
+        print("[*] Capture filter: IPv4 traffic")
+        print("[*] Press Ctrl+C to stop.")
+        print("================================\n")
+
+        sniff(
+            iface=INTERFACE,
+            filter="ip",
+            prn=lambda packet: process_packet(
+                packet,
+                rules,
+                default_policy,
+                local_ip,
+            ),
+            store=False,
+        )
+
+    except KeyboardInterrupt:
+        print("\n[*] Firewall inspection stopped safely.")
+
+    except Exception as error:
+        print(f"[-] Error: {error}", file=sys.stderr)
+        sys.exit(1)
+
+
+if __name__ == "__main__":
+    main()
