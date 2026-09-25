@@ -343,19 +343,19 @@ This project was developed as part of a cybersecurity-focused industrial trainin
 ### 1. Project Structure
 ![Project Structure](fig1_project_structure.png)
 
-### Firewall Rules Configuration
-![Firewall Rules – Part 1](Firewall%20Rules%20Configuration%20%E2%80%93%20JSON%20Rule%20Set%20%5B1%5D.png)
+### 2. Firewall Rules Configuration
+![Firewall Rules - Part 1](Firewall%20Rules%20Configuration%20%E2%80%93%20JSON%20Rule%20Set%20%5B1%5D.png)
 
-![Firewall Rules – Part 2](Firewall%20Rules%20Configuration%20%E2%80%93%20JSON%20Rule%20Set%20%5B2%5D.png)
+![Firewall Rules - Part 2](Firewall%20Rules%20Configuration%20%E2%80%93%20JSON%20Rule%20Set%20%5B2%5D.png)
 
-### nftables Kernel Enforcement
+### 3. nftables Kernel Enforcement
 ![nftables Kernel Enforcement](fig3_nftables_kernel_enforcement.png)
 
-### Firewall Runtime Verification
+### 4. Firewall Runtime Verification
 ![Firewall Runtime Verification](fig4_firewall_runtime_verification.png)
 
-### HTTPS Traffic Allowed
+### 5. HTTPS Traffic Allowed
 ![HTTPS Traffic Allowed](fig5_https_allowed.png)
 
-### Clean Project Structure
+### 6. Clean Project Structure
 ![Clean Project Structure](fig6_project_structure_clean.png)
