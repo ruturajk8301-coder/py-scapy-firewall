@@ -340,7 +340,7 @@ This project was developed as part of a cybersecurity-focused industrial trainin
 
 ## 📸 Project Screenshots
 
-### Project Structure
+### 1. Project Structure
 ![Project Structure](fig1_project_structure.png)
 
 ### Firewall Rules Configuration
