@@ -341,7 +341,7 @@ This project was developed as part of a cybersecurity-focused industrial trainin
 ## 📸 Project Screenshots
 
 ### 1. Project Structure
-![Project Structure](fig1_project_structure.png)
+![Project Structure](screenshots/project-structure.png)
 
 ### 2. Firewall Rules Configuration
 ![Firewall Rules - Part 1](Firewall%20Rules%20Configuration%20%E2%80%93%20JSON%20Rule%20Set%20%5B1%5D.png)
